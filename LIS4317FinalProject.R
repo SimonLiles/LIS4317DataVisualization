@@ -65,13 +65,29 @@ edges <- edges %>%
 #Clean up edges dataframe
 edges <- select(edges, from, to)
 
+edges <- group_by(edges, from, to) %>%
+  count(name = "weights") %>%
+  ungroup()
+
+nodes$size[nodes$label == "world"] <- 1
+
+nodes$size <- log10(nodes$size)
+
 #Making the network
 loc_graph <- graph_from_data_frame(edges, vertices = nodes, directed = TRUE)
 
 #Make the plot
 ggraph(loc_graph, 'partition', circular = TRUE) + 
-  geom_node_arc_bar(aes(fill = depth), size = 0.25) +
+  geom_node_arc_bar(aes(fill = size, color = depth), size = 0.25) +
   geom_node_text(aes(label = label), size = 2.5) + 
   theme_void() +
-  theme(legend.position="none") + 
-  scale_fill_viridis_c()
+  theme(legend.position = "right") + 
+  scale_color_continuous(guide = "none") + 
+  scale_fill_viridis_c(direction = 1)
+
+ggraph(loc_graph, layout = "circlepack", weight = size) + 
+  geom_node_circle(aes(fill = depth)) +
+  geom_node_text(aes(label = label, size = size)) + 
+  theme_void() +
+  theme(legend.position = "FALSE") + 
+  scale_fill_distiller(palette = "RdPu")
